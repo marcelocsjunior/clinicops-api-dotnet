@@ -172,12 +172,12 @@ Essa separação evita que os dois projetos pareçam apenas dois CRUDs com nomes
 ## Status atual
 
 ```text
-Sprint atual: Sprint 1 — Bootstrap ASP.NET Core Web API + Swagger
+Sprint atual: Sprint 2 — Tickets API com Controller, DTO, Service, DI e EF Core
 Status: em desenvolvimento via Pull Request
 Código .NET: criado
 Solution: ClinicOps.sln criada
 Projeto ASP.NET Core: src/ClinicOps.Api criado
-Persistência: planejada, ainda não implementada
+Persistência: EF Core com SQLite em implementação
 ```
 
 ## Sprint 1 — Bootstrap ASP.NET Core Web API + Swagger
@@ -258,6 +258,176 @@ http://localhost:5081/api/status
 - Secrets.
 
 Esses itens entram nas próximas sprints.
+
+## Sprint 2 — Tickets API com Controller, DTO, Service, DI e EF Core
+
+Nesta sprint eu implementei o primeiro fluxo real de domínio do ClinicOps API .NET: chamados técnicos. A entrega demonstra Controller, DTOs, Service, Dependency Injection, EF Core, SQLite e migration inicial, mantendo o escopo controlado antes de evoluir para clínicas, ativos, manutenção e dashboard.
+
+### Objetivo
+
+Implementar um CRUD completo de tickets técnicos usando ASP.NET Core Web API, Entity Framework Core e SQLite.
+
+### Arquivos principais criados ou alterados
+
+```text
+src/ClinicOps.Api/
+  Controllers/
+    TicketsController.cs
+  Data/
+    ClinicOpsDbContext.cs
+  DTOs/
+    Tickets/
+      CreateTicketRequest.cs
+      UpdateTicketRequest.cs
+      TicketResponse.cs
+  Migrations/
+    *_InitialCreateTickets.cs
+    *_InitialCreateTickets.Designer.cs
+    ClinicOpsDbContextModelSnapshot.cs
+  Models/
+    Ticket.cs
+  Services/
+    Implementations/
+      TicketService.cs
+    Interfaces/
+      ITicketService.cs
+  Program.cs
+  appsettings.json
+  ClinicOps.Api.csproj
+```
+
+Também foi atualizado o `.gitignore` para não versionar bancos SQLite locais:
+
+```text
+*.db
+*.db-shm
+*.db-wal
+```
+
+### Endpoints implementados
+
+```http
+GET    /api/tickets
+GET    /api/tickets/{id}
+POST   /api/tickets
+PUT    /api/tickets/{id}
+DELETE /api/tickets/{id}
+```
+
+Retornos esperados:
+
+- `GET /api/tickets`: `200 OK`
+- `GET /api/tickets/{id}` existente: `200 OK`
+- `GET /api/tickets/{id}` inexistente: `404 Not Found`
+- `POST /api/tickets` válido: `201 Created`
+- `PUT /api/tickets/{id}` existente: `200 OK`
+- `PUT /api/tickets/{id}` inexistente: `404 Not Found`
+- `DELETE /api/tickets/{id}` existente: `204 No Content`
+- `DELETE /api/tickets/{id}` inexistente: `404 Not Found`
+
+### Regras implementadas
+
+- Status padrão ao criar ticket: `Open`.
+- Priority padrão ao criar ticket sem prioridade informada: `Medium`.
+- `OpenedAt` e `CreatedAt` preenchidos com `DateTime.UtcNow`.
+- `UpdatedAt` preenchido ao atualizar ticket.
+- Ao atualizar status para `Closed`, `ClosedAt` é preenchido quando ainda estiver nulo.
+- Ao alterar status de `Closed` para outro valor, `ClosedAt` é limpo.
+- O delete remove fisicamente o ticket nesta sprint para manter o MVP simples.
+
+### Comandos EF
+
+Criar migration inicial:
+
+```bash
+dotnet ef migrations add InitialCreateTickets --project src/ClinicOps.Api/ClinicOps.Api.csproj
+```
+
+Aplicar banco local:
+
+```bash
+dotnet ef database update --project src/ClinicOps.Api/ClinicOps.Api.csproj
+```
+
+### Comandos de validação
+
+```bash
+dotnet restore ClinicOps.sln
+dotnet build ClinicOps.sln
+dotnet ef database update --project src/ClinicOps.Api/ClinicOps.Api.csproj
+dotnet run --project src/ClinicOps.Api/ClinicOps.Api.csproj --urls http://0.0.0.0:5081
+```
+
+### Exemplos curl
+
+Verificar status da API:
+
+```bash
+curl http://localhost:5081/api/status
+```
+
+Listar tickets:
+
+```bash
+curl http://localhost:5081/api/tickets
+```
+
+Criar ticket:
+
+```bash
+curl -X POST http://localhost:5081/api/tickets \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clinicId": null,
+    "assetId": null,
+    "title": "Falha de acesso ao compartilhamento de arquivos",
+    "description": "Usuários relatam erro intermitente ao acessar pasta compartilhada.",
+    "priority": "High"
+  }'
+```
+
+Atualizar ticket:
+
+```bash
+curl -X PUT http://localhost:5081/api/tickets/1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Falha de acesso ao compartilhamento de arquivos",
+    "description": "Atendimento em andamento e evidência coletada.",
+    "priority": "High",
+    "status": "InProgress"
+  }'
+```
+
+Fechar ticket:
+
+```bash
+curl -X PUT http://localhost:5081/api/tickets/1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Falha de acesso ao compartilhamento de arquivos",
+    "description": "Chamado resolvido após validação operacional.",
+    "priority": "High",
+    "status": "Closed"
+  }'
+```
+
+Excluir ticket:
+
+```bash
+curl -X DELETE http://localhost:5081/api/tickets/1
+```
+
+### Fora de escopo confirmado
+
+- Clinics API.
+- Assets API.
+- Maintenance Logs API.
+- Dashboard.
+- Autenticação.
+- Dados reais.
+- Clean Architecture completa.
+- Versionamento de banco SQLite local ou secrets.
 
 ## Segurança e governança
 
