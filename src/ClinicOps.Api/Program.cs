@@ -13,6 +13,9 @@ builder.Services.AddDbContext<ClinicOpsDbContext>(options =>
 builder.Services.AddScoped<IClinicService, ClinicService>();
 builder.Services.AddScoped<IAssetService, AssetService>();
 builder.Services.AddScoped<ITicketService, TicketService>();
+builder.Services.AddScoped<ITechnicianService, TechnicianService>();
+builder.Services.AddScoped<IMaintenanceLogService, MaintenanceLogService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 var app = builder.Build();
 

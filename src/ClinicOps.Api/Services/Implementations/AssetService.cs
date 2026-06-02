@@ -90,19 +90,27 @@ public class AssetService : IAssetService
         return ToResponse(asset);
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<DeleteAssetResult> DeleteAsync(int id)
     {
         var asset = await _dbContext.Assets.FindAsync(id);
 
         if (asset is null)
         {
-            return false;
+            return DeleteAssetResult.NotFound;
+        }
+
+        var hasMaintenanceLogs = await _dbContext.MaintenanceLogs
+            .AnyAsync(log => log.AssetId == id);
+
+        if (hasMaintenanceLogs)
+        {
+            return DeleteAssetResult.HasLinkedMaintenanceLogs;
         }
 
         _dbContext.Assets.Remove(asset);
         await _dbContext.SaveChangesAsync();
 
-        return true;
+        return DeleteAssetResult.Deleted;
     }
 
     private static AssetResponse ToResponse(Asset asset)

@@ -8,7 +8,7 @@ O **ClinicOps API .NET** será o segundo case técnico em .NET do portfólio par
 
 A proposta é demonstrar aplicação prática de back-end .NET em um domínio operacional real: suporte técnico, infraestrutura, ativos, chamados e manutenção em clínicas e empresas que dependem de tecnologia para operar com segurança e continuidade.
 
-A Sprint 1 criou a base executável inicial da API com ASP.NET Core Web API, Swagger/OpenAPI e endpoint de status.
+A Sprint 4 adicionou técnicos, registros de manutenção vinculados a ativos e técnicos, e um dashboard operacional consolidado.
 
 ## Stack prevista
 
@@ -112,7 +112,14 @@ POST   /api/tickets
 PUT    /api/tickets/{id}
 DELETE /api/tickets/{id}
 
+GET    /api/technicians
+GET    /api/technicians/{id}
+POST   /api/technicians
+PUT    /api/technicians/{id}
+DELETE /api/technicians/{id}
+
 GET    /api/maintenance-logs
+GET    /api/maintenance-logs/{id}
 POST   /api/maintenance-logs
 
 GET    /api/dashboard/summary
@@ -172,7 +179,7 @@ Essa separação evita que os dois projetos pareçam apenas dois CRUDs com nomes
 ## Status atual
 
 ```text
-Sprint atual: Sprint 3 — Clinics API e Assets API
+Sprint atual: Sprint 4 — Maintenance Logs API e Dashboard operacional
 Status: em desenvolvimento via Pull Request
 Código .NET: criado
 Solution: ClinicOps.sln criada
@@ -641,6 +648,124 @@ curl -i -X DELETE http://localhost:5081/api/clinics/1
 - Dados reais.
 - Clean Architecture completa.
 - Versionamento de banco SQLite local ou secrets.
+
+## Sprint 4 — Maintenance Logs API e Dashboard operacional
+
+Nesta sprint eu ampliei o domínio operacional do ClinicOps API .NET com cadastro de técnicos, histórico de manutenções por ativo e técnico, e um resumo consolidado para leitura rápida da operação.
+
+### Objetivo
+
+Implementar Technicians API, Maintenance Logs API e Dashboard operacional usando ASP.NET Core Web API, Entity Framework Core e SQLite.
+
+### Entidades adicionadas
+
+```text
+Technician
+  Id
+  FullName
+  Email
+  IsActive
+  CreatedAt
+  UpdatedAt
+  MaintenanceLogs
+
+MaintenanceLog
+  Id
+  AssetId
+  TechnicianId
+  Description
+  PerformedAt
+  CreatedAt
+  Asset
+  Technician
+```
+
+### Endpoints implementados
+
+```http
+GET    /api/technicians
+GET    /api/technicians/{id}
+POST   /api/technicians
+PUT    /api/technicians/{id}
+DELETE /api/technicians/{id}
+
+GET    /api/maintenance-logs
+GET    /api/maintenance-logs/{id}
+POST   /api/maintenance-logs
+
+GET    /api/dashboard/summary
+```
+
+### Regras de relacionamento
+
+- `Technician` possui relacionamento 1:N com `MaintenanceLog`.
+- `Asset` possui relacionamento 1:N com `MaintenanceLog`.
+- `MaintenanceLog.AssetId` e `MaintenanceLog.TechnicianId` são obrigatórios.
+- Os relacionamentos usam `DeleteBehavior.Restrict`.
+- Técnico ou ativo com manutenção vinculada não pode ser removido pela API e retorna `409 Conflict`.
+
+### Fluxo operacional resumido
+
+1. Criar clínica fictícia.
+2. Criar ativo vinculado à clínica.
+3. Criar técnico fictício.
+4. Registrar manutenção no ativo com o técnico responsável.
+5. Consultar `/api/dashboard/summary`.
+
+### Comandos EF
+
+Criar migration incremental:
+
+```bash
+dotnet ef migrations add AddTechniciansAndMaintenanceLogs --project src/ClinicOps.Api/ClinicOps.Api.csproj
+```
+
+Aplicar banco local:
+
+```bash
+dotnet ef database update --project src/ClinicOps.Api/ClinicOps.Api.csproj
+```
+
+### Comandos de validação
+
+```bash
+dotnet restore ClinicOps.sln
+dotnet build ClinicOps.sln --no-restore
+dotnet ef database update --project src/ClinicOps.Api/ClinicOps.Api.csproj
+dotnet run --project src/ClinicOps.Api/ClinicOps.Api.csproj --urls http://0.0.0.0:5081
+```
+
+### Exemplos curl
+
+Criar técnico:
+
+```bash
+curl -X POST http://localhost:5081/api/technicians \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fullName": "Técnico Demo",
+    "email": "tecnico.demo@example.com",
+    "isActive": true
+  }'
+```
+
+Registrar manutenção:
+
+```bash
+curl -X POST http://localhost:5081/api/maintenance-logs \
+  -H "Content-Type: application/json" \
+  -d '{
+    "assetId": 1,
+    "technicianId": 1,
+    "description": "Manutenção preventiva registrada para demonstração"
+  }'
+```
+
+Consultar dashboard:
+
+```bash
+curl http://localhost:5081/api/dashboard/summary
+```
 
 ## Segurança e governança
 

@@ -1,6 +1,6 @@
-# Exemplos planejados de requisições — ClinicOps API .NET
+# Exemplos de requisições — ClinicOps API .NET
 
-> Documento de planejamento da Sprint 0. Os endpoints abaixo ainda não foram implementados nesta etapa.
+> Exemplos fictícios para validação local e demonstração do case.
 
 ## Convenções previstas
 
@@ -302,6 +302,132 @@ Accept: application/json
 204 No Content
 ```
 
+## POST /api/technicians
+
+Cria um técnico fictício.
+
+### Requisição
+
+```http
+POST /api/technicians HTTP/1.1
+Host: localhost:5081
+Content-Type: application/json
+Accept: application/json
+```
+
+```json
+{
+  "fullName": "Técnico Demo",
+  "email": "tecnico.demo@example.com",
+  "isActive": true
+}
+```
+
+### Resposta esperada
+
+```json
+{
+  "id": 1,
+  "fullName": "Técnico Demo",
+  "email": "tecnico.demo@example.com",
+  "isActive": true,
+  "createdAt": "2026-06-02T12:40:00Z",
+  "updatedAt": null
+}
+```
+
+## GET /api/technicians
+
+Lista técnicos cadastrados.
+
+### Requisição
+
+```http
+GET /api/technicians HTTP/1.1
+Host: localhost:5081
+Accept: application/json
+```
+
+### Resposta esperada
+
+```json
+[
+  {
+    "id": 1,
+    "fullName": "Técnico Demo",
+    "email": "tecnico.demo@example.com",
+    "isActive": true,
+    "createdAt": "2026-06-02T12:40:00Z",
+    "updatedAt": null
+  }
+]
+```
+
+## POST /api/maintenance-logs
+
+Registra uma manutenção em ativo com técnico responsável.
+
+### Requisição
+
+```http
+POST /api/maintenance-logs HTTP/1.1
+Host: localhost:5081
+Content-Type: application/json
+Accept: application/json
+```
+
+```json
+{
+  "assetId": 1,
+  "technicianId": 1,
+  "description": "Manutenção preventiva registrada para demonstração"
+}
+```
+
+### Resposta esperada
+
+```json
+{
+  "id": 1,
+  "assetId": 1,
+  "assetName": "Ultrassom Demo",
+  "technicianId": 1,
+  "technicianName": "Técnico Demo",
+  "description": "Manutenção preventiva registrada para demonstração",
+  "performedAt": "2026-06-02T12:45:00Z",
+  "createdAt": "2026-06-02T12:45:00Z"
+}
+```
+
+## GET /api/maintenance-logs
+
+Lista registros de manutenção.
+
+### Requisição
+
+```http
+GET /api/maintenance-logs HTTP/1.1
+Host: localhost:5081
+Accept: application/json
+```
+
+### Resposta esperada
+
+```json
+[
+  {
+    "id": 1,
+    "assetId": 1,
+    "assetName": "Ultrassom Demo",
+    "technicianId": 1,
+    "technicianName": "Técnico Demo",
+    "description": "Manutenção preventiva registrada para demonstração",
+    "performedAt": "2026-06-02T12:45:00Z",
+    "createdAt": "2026-06-02T12:45:00Z"
+  }
+]
+```
+
 ## GET /api/dashboard/summary
 
 Retorna resumo operacional simples.
@@ -326,8 +452,53 @@ Accept: application/json
   "openTickets": 2,
   "inProgressTickets": 1,
   "closedTickets": 2,
+  "totalTechnicians": 1,
+  "activeTechnicians": 1,
+  "totalMaintenanceLogs": 1,
   "lastUpdatedUtc": "2026-06-02T13:00:00Z"
 }
+```
+
+## Fluxo operacional de demonstração
+
+```bash
+curl -X POST http://localhost:5081/api/clinics \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Unidade Demo",
+    "city": "Cidade Demo",
+    "state": "SC",
+    "isActive": true
+  }'
+
+curl -X POST http://localhost:5081/api/assets \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clinicId": 1,
+    "name": "Ultrassom Demo",
+    "assetType": "MedicalEquipment",
+    "serialNumber": "SN-DEMO-0001",
+    "location": "Sala Demo",
+    "isActive": true
+  }'
+
+curl -X POST http://localhost:5081/api/technicians \
+  -H "Content-Type: application/json" \
+  -d '{
+    "fullName": "Técnico Demo",
+    "email": "tecnico.demo@example.com",
+    "isActive": true
+  }'
+
+curl -X POST http://localhost:5081/api/maintenance-logs \
+  -H "Content-Type: application/json" \
+  -d '{
+    "assetId": 1,
+    "technicianId": 1,
+    "description": "Manutenção preventiva registrada para demonstração"
+  }'
+
+curl http://localhost:5081/api/dashboard/summary
 ```
 
 ## Observações de governança
