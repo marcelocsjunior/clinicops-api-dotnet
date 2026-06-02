@@ -8,7 +8,7 @@ O **ClinicOps API .NET** será o segundo case técnico em .NET do portfólio par
 
 A proposta é demonstrar aplicação prática de back-end .NET em um domínio operacional real: suporte técnico, infraestrutura, ativos, chamados e manutenção em clínicas e empresas que dependem de tecnologia para operar com segurança e continuidade.
 
-Nesta Sprint 0, o foco é apenas o baseline documental. Nenhum código .NET foi criado ainda.
+A Sprint 1 criou a base executável inicial da API com ASP.NET Core Web API, Swagger/OpenAPI e endpoint de status.
 
 ## Stack prevista
 
@@ -172,13 +172,92 @@ Essa separação evita que os dois projetos pareçam apenas dois CRUDs com nomes
 ## Status atual
 
 ```text
-Sprint atual: Sprint 0 — Baseline documental
+Sprint atual: Sprint 1 — Bootstrap ASP.NET Core Web API + Swagger
 Status: em desenvolvimento via Pull Request
-Código .NET: ainda não criado
-Solution: ainda não criada
-Projeto ASP.NET Core: ainda não criado
+Código .NET: criado
+Solution: ClinicOps.sln criada
+Projeto ASP.NET Core: src/ClinicOps.Api criado
 Persistência: planejada, ainda não implementada
 ```
+
+## Sprint 1 — Bootstrap ASP.NET Core Web API + Swagger
+
+A Sprint 1 cria a base executável inicial do projeto.
+
+### Estrutura criada
+
+```text
+ClinicOps.sln
+src/
+  ClinicOps.Api/
+    ClinicOps.Api.csproj
+    Program.cs
+    appsettings.json
+    appsettings.Development.json
+    Properties/
+      launchSettings.json
+```
+
+### Funcionalidades entregues
+
+- ASP.NET Core Web API em .NET 8.
+- Swagger/OpenAPI habilitado em ambiente de desenvolvimento.
+- Endpoint inicial de status.
+- Porta local recomendada: `5081`.
+
+### Endpoint inicial
+
+```http
+GET /api/status
+```
+
+Resposta esperada:
+
+```json
+{
+  "status": "ok",
+  "service": "ClinicOps API",
+  "environment": "Development",
+  "timestampUtc": "..."
+}
+```
+
+### Como restaurar dependências
+
+```bash
+dotnet restore ClinicOps.sln
+```
+
+### Como compilar
+
+```bash
+dotnet build ClinicOps.sln
+```
+
+### Como executar
+
+```bash
+dotnet run --project src/ClinicOps.Api/ClinicOps.Api.csproj --urls http://0.0.0.0:5081
+```
+
+### URLs locais
+
+```text
+http://localhost:5081/swagger
+http://localhost:5081/api/status
+```
+
+### Fora de escopo nesta sprint
+
+- EF Core.
+- SQLite.
+- Migrations.
+- CRUDs de domínio.
+- Entidades `Clinic`, `Asset`, `Ticket`, `Technician` e `MaintenanceLog`.
+- Dados reais.
+- Secrets.
+
+Esses itens entram nas próximas sprints.
 
 ## Segurança e governança
 
