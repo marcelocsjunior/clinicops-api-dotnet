@@ -172,12 +172,12 @@ Essa separação evita que os dois projetos pareçam apenas dois CRUDs com nomes
 ## Status atual
 
 ```text
-Sprint atual: Sprint 2 — Tickets API com Controller, DTO, Service, DI e EF Core
+Sprint atual: Sprint 3 — Clinics API e Assets API
 Status: em desenvolvimento via Pull Request
 Código .NET: criado
 Solution: ClinicOps.sln criada
 Projeto ASP.NET Core: src/ClinicOps.Api criado
-Persistência: EF Core com SQLite em implementação
+Persistência: EF Core com SQLite e migrations incrementais
 ```
 
 ## Sprint 1 — Bootstrap ASP.NET Core Web API + Swagger
@@ -425,6 +425,219 @@ curl -X DELETE http://localhost:5081/api/tickets/1
 - Maintenance Logs API.
 - Dashboard.
 - Autenticação.
+- Dados reais.
+- Clean Architecture completa.
+- Versionamento de banco SQLite local ou secrets.
+
+## Sprint 3 — Clinics API e Assets API
+
+Nesta sprint eu evoluí o domínio operacional do ClinicOps API .NET adicionando clínicas/unidades e ativos/equipamentos. A entrega demonstra modelagem relacional com EF Core, relacionamento 1:N entre Clinic e Asset, controllers, DTOs, services, DI e migration incremental, mantendo o projeto simples, rastreável e preparado para chamados técnicos mais contextualizados.
+
+### Objetivo
+
+Implementar os fluxos de clínicas/unidades e ativos/equipamentos usando ASP.NET Core Web API, Entity Framework Core e SQLite.
+
+### Entidades adicionadas
+
+```text
+Clinic
+  Id
+  Name
+  City
+  State
+  IsActive
+  CreatedAt
+  UpdatedAt
+  Assets
+
+Asset
+  Id
+  ClinicId
+  Name
+  AssetType
+  SerialNumber
+  Location
+  IsActive
+  CreatedAt
+  UpdatedAt
+  Clinic
+```
+
+### Arquivos principais criados ou alterados
+
+```text
+src/ClinicOps.Api/
+  Controllers/
+    ClinicsController.cs
+    AssetsController.cs
+  Data/
+    ClinicOpsDbContext.cs
+  DTOs/
+    Clinics/
+      CreateClinicRequest.cs
+      UpdateClinicRequest.cs
+      ClinicResponse.cs
+    Assets/
+      CreateAssetRequest.cs
+      UpdateAssetRequest.cs
+      AssetResponse.cs
+  Migrations/
+    *_AddClinicsAndAssets.cs
+    *_AddClinicsAndAssets.Designer.cs
+    ClinicOpsDbContextModelSnapshot.cs
+  Models/
+    Clinic.cs
+    Asset.cs
+  Services/
+    Implementations/
+      ClinicService.cs
+      AssetService.cs
+    Interfaces/
+      IClinicService.cs
+      IAssetService.cs
+  Program.cs
+```
+
+### Endpoints implementados
+
+```http
+GET    /api/clinics
+GET    /api/clinics/{id}
+POST   /api/clinics
+PUT    /api/clinics/{id}
+DELETE /api/clinics/{id}
+
+GET    /api/assets
+GET    /api/assets/{id}
+POST   /api/assets
+PUT    /api/assets/{id}
+DELETE /api/assets/{id}
+```
+
+### Regras de relacionamento
+
+- `Clinic` possui relacionamento 1:N com `Asset`.
+- `Asset.ClinicId` é obrigatório e possui FK para `Clinic`.
+- O relacionamento usa `DeleteBehavior.Restrict`.
+- Uma clínica com ativos vinculados não pode ser removida pela API e retorna `409 Conflict`.
+- `Ticket` continua com `ClinicId` e `AssetId` opcionais, sem relacionamento obrigatório nesta sprint.
+
+### Regras de validação
+
+- Clinics: `Name` obrigatório com max 120, `City` obrigatório com max 80, `State` obrigatório com max 2.
+- Assets: `ClinicId` deve ser maior que zero, `Name` obrigatório com max 120, `AssetType` obrigatório com max 60, `SerialNumber` max 120 e `Location` max 120.
+- Criar ou atualizar asset com `ClinicId` inexistente retorna `400 Bad Request`.
+
+### Comandos EF
+
+Criar migration incremental:
+
+```bash
+dotnet ef migrations add AddClinicsAndAssets --project src/ClinicOps.Api/ClinicOps.Api.csproj
+```
+
+Aplicar banco local:
+
+```bash
+dotnet ef database update --project src/ClinicOps.Api/ClinicOps.Api.csproj
+```
+
+### Comandos de validação
+
+```bash
+dotnet restore ClinicOps.sln
+dotnet build ClinicOps.sln
+dotnet ef database update --project src/ClinicOps.Api/ClinicOps.Api.csproj
+dotnet run --project src/ClinicOps.Api/ClinicOps.Api.csproj --urls http://0.0.0.0:5081
+```
+
+### Exemplos curl
+
+Verificar status da API:
+
+```bash
+curl http://localhost:5081/api/status
+```
+
+Listar clínicas:
+
+```bash
+curl http://localhost:5081/api/clinics
+```
+
+Criar clínica:
+
+```bash
+curl -X POST http://localhost:5081/api/clinics \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Clínica Exemplo Norte",
+    "city": "Cidade Exemplo",
+    "state": "MG",
+    "isActive": true
+  }'
+```
+
+Criar ativo vinculado à clínica:
+
+```bash
+curl -X POST http://localhost:5081/api/assets \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clinicId": 1,
+    "name": "Servidor de Arquivos Exemplo",
+    "assetType": "Server",
+    "serialNumber": "SN-DEMO-0001",
+    "location": "Sala Técnica",
+    "isActive": true
+  }'
+```
+
+Listar ativos:
+
+```bash
+curl http://localhost:5081/api/assets
+```
+
+Atualizar ativo:
+
+```bash
+curl -X PUT http://localhost:5081/api/assets/1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "clinicId": 1,
+    "name": "Servidor de Arquivos Exemplo",
+    "assetType": "Server",
+    "serialNumber": "SN-DEMO-0001",
+    "location": "Rack Principal",
+    "isActive": true
+  }'
+```
+
+Validar proteção de delete da clínica com ativo vinculado:
+
+```bash
+curl -i -X DELETE http://localhost:5081/api/clinics/1
+```
+
+Excluir ativo:
+
+```bash
+curl -i -X DELETE http://localhost:5081/api/assets/1
+```
+
+Excluir clínica:
+
+```bash
+curl -i -X DELETE http://localhost:5081/api/clinics/1
+```
+
+### Fora de escopo confirmado
+
+- Maintenance Logs API.
+- Dashboard.
+- Autenticação.
+- Alterações no fluxo de Tickets além da compatibilidade com o DbContext.
 - Dados reais.
 - Clean Architecture completa.
 - Versionamento de banco SQLite local ou secrets.
