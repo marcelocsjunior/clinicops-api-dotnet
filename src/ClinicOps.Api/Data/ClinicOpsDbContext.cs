@@ -13,6 +13,8 @@ public class ClinicOpsDbContext : DbContext
     public DbSet<Ticket> Tickets => Set<Ticket>();
     public DbSet<Clinic> Clinics => Set<Clinic>();
     public DbSet<Asset> Assets => Set<Asset>();
+    public DbSet<Technician> Technicians => Set<Technician>();
+    public DbSet<MaintenanceLog> MaintenanceLogs => Set<MaintenanceLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -68,6 +70,11 @@ public class ClinicOpsDbContext : DbContext
                 .WithMany(clinic => clinic.Assets)
                 .HasForeignKey(asset => asset.ClinicId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasMany(asset => asset.MaintenanceLogs)
+                .WithOne(log => log.Asset)
+                .HasForeignKey(log => log.AssetId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Ticket>(entity =>
@@ -93,6 +100,57 @@ public class ClinicOpsDbContext : DbContext
 
             entity.Property(ticket => ticket.CreatedAt)
                 .IsRequired();
+        });
+
+        modelBuilder.Entity<Technician>(entity =>
+        {
+            entity.Property(technician => technician.FullName)
+                .IsRequired()
+                .HasMaxLength(120);
+
+            entity.Property(technician => technician.Email)
+                .IsRequired()
+                .HasMaxLength(120);
+
+            entity.Property(technician => technician.IsActive)
+                .IsRequired();
+
+            entity.Property(technician => technician.CreatedAt)
+                .IsRequired();
+
+            entity.HasMany(technician => technician.MaintenanceLogs)
+                .WithOne(log => log.Technician)
+                .HasForeignKey(log => log.TechnicianId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<MaintenanceLog>(entity =>
+        {
+            entity.Property(log => log.AssetId)
+                .IsRequired();
+
+            entity.Property(log => log.TechnicianId)
+                .IsRequired();
+
+            entity.Property(log => log.Description)
+                .IsRequired()
+                .HasMaxLength(1000);
+
+            entity.Property(log => log.PerformedAt)
+                .IsRequired();
+
+            entity.Property(log => log.CreatedAt)
+                .IsRequired();
+
+            entity.HasOne(log => log.Asset)
+                .WithMany(asset => asset.MaintenanceLogs)
+                .HasForeignKey(log => log.AssetId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(log => log.Technician)
+                .WithMany(technician => technician.MaintenanceLogs)
+                .HasForeignKey(log => log.TechnicianId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

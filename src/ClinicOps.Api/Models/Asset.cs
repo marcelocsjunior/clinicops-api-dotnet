@@ -13,4 +13,5 @@ public class Asset
     public DateTime? UpdatedAt { get; set; }
 
     public Clinic? Clinic { get; set; }
+    public ICollection<MaintenanceLog> MaintenanceLogs { get; set; } = new List<MaintenanceLog>();
 }

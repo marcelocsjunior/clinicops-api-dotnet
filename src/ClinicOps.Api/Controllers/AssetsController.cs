@@ -67,8 +67,13 @@ public class AssetsController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var deleted = await _assetService.DeleteAsync(id);
+        var result = await _assetService.DeleteAsync(id);
 
-        return deleted ? NoContent() : NotFound();
+        return result switch
+        {
+            DeleteAssetResult.Deleted => NoContent(),
+            DeleteAssetResult.HasLinkedMaintenanceLogs => Conflict(new { message = "Asset has linked maintenance logs and cannot be deleted." }),
+            _ => NotFound()
+        };
     }
 }
