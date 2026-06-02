@@ -10,6 +10,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<ClinicOpsDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddScoped<IClinicService, ClinicService>();
+builder.Services.AddScoped<IAssetService, AssetService>();
 builder.Services.AddScoped<ITicketService, TicketService>();
 
 var app = builder.Build();
